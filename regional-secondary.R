@@ -4,7 +4,7 @@ library(future.apply)
 library(purrr)
 library(data.table)
 
-# inner funciton for forecasing a single region
+# inner function for forecasing a single region
 forecast_region <- function(target_region, reports, case_forecast, verbose = TRUE, ...) {
   if (verbose) {
     message("Forecasting for: ", target_region)
