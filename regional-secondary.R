@@ -57,7 +57,7 @@ regional_secondary <- function(reports, case_forecast, verbose = interactive(), 
                              future.scheduling = Inf,
                              ...)
   # pick out results and name
-  forecasts <- purrr::map(forecasts, ~ .[[1]])
+  forecasts <- map(forecasts, ~ .[[1]])
   names(forecasts) <- unique(reports$region)
   
   # format output
