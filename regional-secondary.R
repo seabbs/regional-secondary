@@ -5,7 +5,8 @@ library(purrr)
 library(data.table)
 
 # inner function for forecasting a single region
-forecast_region <- function(target_region, reports, case_forecast, verbose = TRUE, ...) {
+forecast_region <- function(target_region, reports, case_forecast, verbose = TRUE, 
+                            return_fit = TRUE, ...) {
   if (verbose) {
     message("Forecasting for: ", target_region)
   }
@@ -34,7 +35,9 @@ forecast_region <- function(target_region, reports, case_forecast, verbose = TRU
   # return samples, summary + estimated fit
   out$samples <- deaths_forecast$samples
   out$summarised <- deaths_forecast$predictions
-  out$estimate_secondary <- cases_to_deaths
+  if (return_fit) {
+    out$estimate_secondary <- cases_to_deaths
+  }
   if (verbose) {
     message("Completed forecast for: ", target_region)
   }
@@ -43,7 +46,8 @@ forecast_region <- function(target_region, reports, case_forecast, verbose = TRU
 
 # wrapper for forecasting across regions
 # additional arguments are passed to estimate_secondary
-regional_secondary <- function(reports, case_forecast, verbose = interactive(), ...) {
+regional_secondary <- function(reports, case_forecast, verbose = interactive(), 
+                               return_fit = TRUE, ...) {
   # run the forecast safely in case of failure
   safe_forecast_region <- safely(forecast_region)
   
@@ -53,6 +57,7 @@ regional_secondary <- function(reports, case_forecast, verbose = interactive(), 
                              reports = reports, 
                              case_forecast = case_forecast,
                              verbose = verbose,
+                             return_fit = return_fit,
                              future.seed = TRUE, 
                              future.scheduling = Inf,
                              ...)
