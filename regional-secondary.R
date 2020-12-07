@@ -6,7 +6,7 @@ library(data.table)
 
 # inner function for forecasting a single region
 forecast_region <- function(target_region, reports, case_forecast, verbose = TRUE, 
-                            return_fit = TRUE, ...) {
+                            return_fit = TRUE, return_plots = TRUE, ...) {
   if (verbose) {
     message("Forecasting for: ", target_region)
   }
@@ -19,11 +19,14 @@ forecast_region <- function(target_region, reports, case_forecast, verbose = TRU
   # estimate relationship fitting to just the last month of data
   cases_to_deaths <- estimate_secondary(target_obs, verbose = FALSE, ...)
   out <- list()
-  out$plots$fit <- plot(cases_to_deaths)
-  
+  if (return_plots) {
+      out$plots$fit <- plot(cases_to_deaths)
+  }
+
   deaths_forecast <- forecast_secondary(cases_to_deaths, pred_cases, samples = 1000)
-  out$plots$forecast <- plot(deaths_forecast, from = max(target_obs$date) - 7)
-  
+  if (return_plots) {
+    out$plots$forecast <- plot(deaths_forecast, from = max(target_obs$date) - 7)
+  }
   # link in previous observations to forecast
   obs_as_samples <- target_obs[, .(date, value = secondary, sample = list(unique(deaths_forecast$samples$sample)))]
   obs_as_samples <- obs_as_samples[, .(sample = as.numeric(unlist(sample))), by = c("date", "value")]
@@ -47,7 +50,7 @@ forecast_region <- function(target_region, reports, case_forecast, verbose = TRU
 # wrapper for forecasting across regions
 # additional arguments are passed to estimate_secondary
 regional_secondary <- function(reports, case_forecast, verbose = interactive(), 
-                               return_fit = TRUE, ...) {
+                               return_fit = TRUE, return_plots = TRUE,  ...) {
   # run the forecast safely in case of failure
   safe_forecast_region <- safely(forecast_region)
   
@@ -58,6 +61,7 @@ regional_secondary <- function(reports, case_forecast, verbose = interactive(),
                              case_forecast = case_forecast,
                              verbose = verbose,
                              return_fit = return_fit,
+                             return_plots = return_plots,
                              future.seed = TRUE, 
                              future.scheduling = Inf,
                              ...)
