@@ -53,8 +53,8 @@ regional_secondary <- function(reports, case_forecast, verbose = interactive(),
                                return_fit = TRUE, return_plots = TRUE,  ...) {
   
   # Convert to data.table
-  reports <- data.table::as.data.table(reports)
-  case_forecast <- data.table::as.data.table(case_forecast)
+  reports <- as.data.table(reports)
+  case_forecast <- as.data.table(case_forecast)
   
   # run the forecast safely in case of failure
   safe_forecast_region <- safely(forecast_region)
