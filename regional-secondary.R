@@ -86,3 +86,20 @@ regional_secondary <- function(reports, case_forecast, verbose = interactive(),
   out$errors <- errors
   return(out)
 }
+
+# extract a summary of the posteriors for the convolution model parameters
+summarised_secondary_posteriors <- function(secondary_list, 
+                                            params = c("delay", "frac_obs", "phi")) {
+       summarised_posterior <- map(
+              secondary_list$region,
+              ~ .$summarised_posterior
+       )
+       summarised_posterior <- rbindlist(summarised_posterior, idcol = "region")
+       if (length(params) > 0) {
+              summarised_posterior <- map(params, 
+                      ~ summarised_posterior[grepl(., variable)])
+              summarised_posterior <- rbindlist(summarised_posterior)
+              setorder(summarised_posterior, region, variable)
+       }
+       return(summarised_posterior)
+}
