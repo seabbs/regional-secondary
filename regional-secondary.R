@@ -70,6 +70,8 @@ regional_secondary <- function(reports, case_forecast, verbose = interactive(),
                              future.seed = TRUE, 
                              future.scheduling = Inf,
                              ...)
+  # pick out error messages
+  errors <- map(forecasts, ~ .[[2]])
   # pick out results and name
   forecasts <- map(forecasts, ~ .[[1]])
   names(forecasts) <- unique(reports$region)
@@ -79,5 +81,6 @@ regional_secondary <- function(reports, case_forecast, verbose = interactive(),
   out$region <- forecasts
   out$samples <- rbindlist(map(forecasts, ~ .$samples), idcol = "region")
   out$summarised <- rbindlist(map(forecasts, ~ .$summarised), idcol = "region")
+  out$errors <- errors
   return(out)
 }
