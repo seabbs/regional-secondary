@@ -72,6 +72,7 @@ regional_secondary <- function(reports, case_forecast, verbose = interactive(),
                              ...)
   # pick out error messages
   errors <- map(forecasts, ~ .[[2]])
+  names(errors) <- unique(reports$region)
   # pick out results and name
   forecasts <- map(forecasts, ~ .[[1]])
   names(forecasts) <- unique(reports$region)
