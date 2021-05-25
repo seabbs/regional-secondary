@@ -38,6 +38,7 @@ forecast_region <- function(target_region, reports, case_forecast, verbose = TRU
   # return samples, summary + estimated fit
   out$samples <- deaths_forecast$samples
   out$summarised <- deaths_forecast$predictions
+  out$summarised_posterior <- extract_stan_param(cases_to_deaths$fit, CrIs = c(seq(0.1, 0.9, 0.1), 0.95))
   if (return_fit) {
     out$estimate_secondary <- cases_to_deaths
   }
