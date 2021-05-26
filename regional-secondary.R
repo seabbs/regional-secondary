@@ -23,26 +23,28 @@ forecast_region <- function(target_region, reports, case_forecast, verbose = TRU
   # forecast using model fit
   if (!missing(case_forecast)) {
     if (!is.null(case_forecast)) {
-       pred_cases <- case_forecast[region == target_region]
-       pred_cases <- pred_cases[, .(date, sample, value = cases)]
-       pred_cases <- pred_cases[date > max(target_obs$date)]
+      if (nrow(case_forecast) > 0) {
+            pred_cases <- case_forecast[region == target_region]
+            pred_cases <- pred_cases[, .(date, sample, value = cases)]
+            pred_cases <- pred_cases[date > max(target_obs$date)]
       
-       deaths_forecast <- forecast_secondary(cases_to_deaths, pred_cases, samples = 1000)
-       if (return_plots) {
-         out$plots$forecast <- plot(deaths_forecast, from = max(target_obs$date) - 7)
-       }
+            deaths_forecast <- forecast_secondary(cases_to_deaths, pred_cases, samples = 1000)
+            if (return_plots) {
+                out$plots$forecast <- plot(deaths_forecast, from = max(target_obs$date) - 7)
+            }
       
-       # link in previous observations to forecast
-      obs_as_samples <- target_obs[, .(date, value = secondary, sample = list(unique(deaths_forecast$samples$sample)))]
-      obs_as_samples <- obs_as_samples[, .(sample = as.numeric(unlist(sample))), by = c("date", "value")]
-      deaths_forecast$samples <- rbindlist(list(
-        obs_as_samples,
-        deaths_forecast$samples
-        ), use.names = TRUE)
+            # link in previous observations to forecast
+            obs_as_samples <- target_obs[, .(date, value = secondary, sample = list(unique(deaths_forecast$samples$sample)))]
+            obs_as_samples <- obs_as_samples[, .(sample = as.numeric(unlist(sample))), by = c("date", "value")]
+            deaths_forecast$samples <- rbindlist(list(
+              obs_as_samples,
+              deaths_forecast$samples
+            ), use.names = TRUE)
       
-      # return samples + summary
-      out$samples <- deaths_forecast$samples
-      out$summarised <- deaths_forecast$predictions
+            # return samples + summary
+            out$samples <- deaths_forecast$samples
+            out$summarised <- deaths_forecast$predictions
+      }
     }
   }
 
