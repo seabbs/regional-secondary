@@ -6,7 +6,7 @@ library(data.table)
 
 # inner function for forecasting a single region
 forecast_region <- function(target_region, reports, case_forecast, verbose = TRUE, 
-                            return_fit = TRUE, return_plots = TRUE, ...) {
+                            return_fit = TRUE, return_plots = TRUE, window = 3 * 7, ...) {
   if (verbose) {
     message("Processing: ", target_region)
   }
@@ -14,7 +14,9 @@ forecast_region <- function(target_region, reports, case_forecast, verbose = TRU
   target_obs <- reports[region == target_region][, region := NULL]
 
   # estimate relationship fitting to just the last month of data
-  cases_to_deaths <- estimate_secondary(target_obs, verbose = FALSE, ...)
+  cases_to_deaths <- estimate_secondary(target_obs, verbose = FALSE, 
+                                        burn_in = as.integer(max(target_obs$date) - min(target_obs$date)) - window,
+                                        ...)
   out <- list()
   if (return_plots) {
       out$plots$fit <- plot(cases_to_deaths)
