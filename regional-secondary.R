@@ -111,9 +111,11 @@ regional_secondary <- function(reports, case_forecast = NULL, verbose = interact
   # format output
   out <- list()
   out$region <- forecasts
-  out$samples <- rbindlist(map(forecasts, ~ .$samples), idcol = "region")
-  out$summarised <- rbindlist(map(forecasts, ~ .$summarised), idcol = "region")
-  out$summarised_posterior <- summarised_secondary_posteriors(forecasts, params = posterior_params)
+  if (!all(map_lgl(forecasts, is.null))) {
+      out$samples <- rbindlist(map(forecasts, ~ .$samples), idcol = "region")
+      out$summarised <- rbindlist(map(forecasts, ~ .$summarised), idcol = "region")
+      out$summarised_posterior <- summarised_secondary_posteriors(forecasts, params = posterior_params)
+  }
   out$errors <- errors
   return(out)
 }
