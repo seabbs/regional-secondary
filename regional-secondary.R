@@ -61,7 +61,7 @@ forecast_region <- function(target_region, reports, case_forecast, verbose = TRU
 summarised_secondary_posteriors <- function(secondary_list, 
                                             params = c("delay", "frac_obs", "phi")) {
        summarised_posterior <- map(
-              secondary_list$region,
+              secondary_list,
               ~ .$summarised_posterior
        )
        summarised_posterior <- rbindlist(summarised_posterior, idcol = "region")
