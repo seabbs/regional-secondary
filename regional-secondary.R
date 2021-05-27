@@ -64,7 +64,7 @@ forecast_region <- function(target_region, reports, case_forecast, verbose = TRU
     }
   }
   # estimate relationship fitting to just the last month of data
-  cases_to_deaths <- do.call(estimate_secondary, c
+  cases_to_deaths <- do.call(estimate_secondary, c(
     list(
       reports = target_obs,
       verbose = verbose,
