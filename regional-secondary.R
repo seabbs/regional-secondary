@@ -58,7 +58,7 @@ forecast_region <- function(target_region, reports, case_forecast, verbose = TRU
       if (nrow(prior) > 0) {
         if (verbose) {
           message("Replacing specified priors with those from the passed in prior object")
-          args <- update_secondary_args(..., posterior = prior)
+          args <- update_secondary_args(args), posterior = prior)
         }
       }
     }
