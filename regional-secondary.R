@@ -118,7 +118,7 @@ update_secondary_args <- function(args, posterior) {
 regional_secondary <- function(reports, case_forecast = NULL, verbose = interactive(), 
                                return_fit = TRUE, return_plots = TRUE,
                                posterior_params = c("delay", "frac_obs", "phi"),
-                               priors, ...) {
+                               priors = NULL, ...) {
   
   # Convert to data.table
   reports <- as.data.table(reports)
@@ -132,6 +132,7 @@ regional_secondary <- function(reports, case_forecast = NULL, verbose = interact
                              safe_forecast_region,
                              reports = reports, 
                              case_forecast = case_forecast,
+                             priors = priors,
                              verbose = verbose,
                              return_fit = return_fit,
                              return_plots = return_plots,
