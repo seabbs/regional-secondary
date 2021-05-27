@@ -73,9 +73,6 @@ forecast_region <- function(target_region, reports, case_forecast, verbose = TRU
     fit_args
   ))
   
-  estimate_secondary(target_obs, verbose = FALSE, 
-                                        burn_in = burn_in,
-                                        ...)
   out <- list()
   if (return_plots) {
       out$plots$fit <- plot(cases_to_deaths)
