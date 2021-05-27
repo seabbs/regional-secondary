@@ -118,8 +118,7 @@ update_secondary_args <- function(args, posterior) {
 regional_secondary <- function(reports, case_forecast = NULL, verbose = interactive(), 
                                return_fit = TRUE, return_plots = TRUE,
                                posterior_params = c("delay", "frac_obs", "phi"),
-                               priors,
-                               ...) {
+                               priors, ...) {
   
   # Convert to data.table
   reports <- as.data.table(reports)
