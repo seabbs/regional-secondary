@@ -51,7 +51,7 @@ forecast_region <- function(target_region, reports, case_forecast, verbose = TRU
   }
 
   # update args to use posterior priors
-  fit_args <- ...
+  fit_args <- list(...)
   if (!missing(priors)) {
     if (!is.null(priors)) {
       prior <- prior[region == target_region]
