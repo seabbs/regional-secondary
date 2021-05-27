@@ -54,7 +54,7 @@ forecast_region <- function(target_region, reports, case_forecast, verbose = TRU
   fit_args <- list(...)
   if (!missing(priors)) {
     if (!is.null(priors)) {
-      prior <- prior[region == target_region]
+      prior <- priors[region == target_region]
       if (nrow(prior) > 0) {
         if (verbose) {
           message("Replacing specified priors with those from the passed in prior object")
