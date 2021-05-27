@@ -82,6 +82,37 @@ summarised_secondary_posteriors <- function(secondary_list,
        return(summarised_posterior)
 }
 
+exract_secondary_priors <- function(posterior) {
+  posterior <- as.data.table(posterior)
+  posterior <- posterior[, .(variable, mean, sd)]
+  return(posterior)
+}
+
+update_secondary_args <- function(args, posterior) {
+  if (!missing(posterior)) {
+    if (!is.null(posterior)) {
+      # pull out just the columns of interes
+      posterior <- extract_secondary_priors(posterior)
+      # replace scaling if present in the posterior
+      scale <- posterior[variable == "frac_obs[1]"]
+      if (nrow(scale) > 0) {
+        args$obs$scale$mean <- signif(scale$mean[1], 3)
+        args$obs$scale$sd <- signif(scale$sd[1], 3)
+      }
+      #replace delay parameters if present
+      delay_mean <- posterior[variable == "delay_mean[1]"]
+      delay_sd <- posterior[variable == "delay_sd[1]"]
+      if (nrow(delay_mean) > 0) {
+        args$delays$delay_mean_mean <- signif(delay_mean$mean[1], 3)
+        args$delays$delay_mean_sd <- signif(delay_mean$sd[1], 3)
+        args$delays$delay_sd_mean <- signif(delay_sd$mean[1], 3)
+        args$delays$delay_sd_sd <- signif(delay_sd$sd[1], 3)      
+      }
+    }
+  }
+  return(args)
+}
+
 # wrapper for forecasting across regions
 # additional arguments are passed to estimate_secondary
 regional_secondary <- function(reports, case_forecast = NULL, verbose = interactive(), 
