@@ -4,9 +4,41 @@ library(future.apply)
 library(purrr)
 library(data.table)
 
+# extract priors from a posterior and update fitting args
+exract_secondary_priors <- function(posterior) {
+  posterior <- as.data.table(posterior)
+  posterior <- posterior[, .(variable, mean, sd)]
+  return(posterior)
+}
+
+update_secondary_args <- function(args, posterior) {
+  if (!missing(posterior)) {
+    if (!is.null(posterior)) {
+      # pull out just the columns of interes
+      posterior <- extract_secondary_priors(posterior)
+      # replace scaling if present in the posterior
+      scale <- posterior[variable == "frac_obs[1]"]
+      if (nrow(scale) > 0) {
+        args$obs$scale$mean <- signif(scale$mean[1], 3)
+        args$obs$scale$sd <- signif(scale$sd[1], 3)
+      }
+      #replace delay parameters if present
+      delay_mean <- posterior[variable == "delay_mean[1]"]
+      delay_sd <- posterior[variable == "delay_sd[1]"]
+      if (nrow(delay_mean) > 0) {
+        args$delays$delay_mean_mean <- signif(delay_mean$mean[1], 3)
+        args$delays$delay_mean_sd <- signif(delay_mean$sd[1], 3)
+        args$delays$delay_sd_mean <- signif(delay_sd$mean[1], 3)
+        args$delays$delay_sd_sd <- signif(delay_sd$sd[1], 3)      
+      }
+    }
+  }
+  return(args)
+}
+
 # inner function for forecasting a single region
 forecast_region <- function(target_region, reports, case_forecast, verbose = TRUE, 
-                            return_fit = TRUE, return_plots = TRUE, window = NULL, burn_in = 14, ...) {
+                            return_fit = TRUE, return_plots = TRUE, window = NULL, burn_in = 14, priors, ...) {
   if (verbose) {
     message("Processing: ", target_region)
   }
@@ -17,8 +49,27 @@ forecast_region <- function(target_region, reports, case_forecast, verbose = TRU
   if (!is.null(window)) {
     burn_in <- as.integer(max(target_obs$date) - min(target_obs$date)) - window
   }
+
+  # update args to use posterior priors
+  fit_args <- ...
+  if (!missing(priors)) {
+    if (!is.null(priors)) {
+      prior <- prior[region == target_region]
+      if (nrow(prior) > 0) {
+        if (verbose) {
+          message("Replacing specified priors with those from the passed in prior object")
+          args <- update_secondary_args(..., posterior = prior)
+        }
+      }
+    }
+  }
   # estimate relationship fitting to just the last month of data
-  cases_to_deaths <- estimate_secondary(target_obs, verbose = FALSE, 
+  cases_to_deaths <- do.call(estimate_secondary, 
+    list(
+      reports = 
+    ))
+  
+  estimate_secondary(target_obs, verbose = FALSE, 
                                         burn_in = burn_in,
                                         ...)
   out <- list()
@@ -80,37 +131,6 @@ summarised_secondary_posteriors <- function(secondary_list,
               setorder(summarised_posterior, region, variable)
        }
        return(summarised_posterior)
-}
-
-exract_secondary_priors <- function(posterior) {
-  posterior <- as.data.table(posterior)
-  posterior <- posterior[, .(variable, mean, sd)]
-  return(posterior)
-}
-
-update_secondary_args <- function(args, posterior) {
-  if (!missing(posterior)) {
-    if (!is.null(posterior)) {
-      # pull out just the columns of interes
-      posterior <- extract_secondary_priors(posterior)
-      # replace scaling if present in the posterior
-      scale <- posterior[variable == "frac_obs[1]"]
-      if (nrow(scale) > 0) {
-        args$obs$scale$mean <- signif(scale$mean[1], 3)
-        args$obs$scale$sd <- signif(scale$sd[1], 3)
-      }
-      #replace delay parameters if present
-      delay_mean <- posterior[variable == "delay_mean[1]"]
-      delay_sd <- posterior[variable == "delay_sd[1]"]
-      if (nrow(delay_mean) > 0) {
-        args$delays$delay_mean_mean <- signif(delay_mean$mean[1], 3)
-        args$delays$delay_mean_sd <- signif(delay_mean$sd[1], 3)
-        args$delays$delay_sd_mean <- signif(delay_sd$mean[1], 3)
-        args$delays$delay_sd_sd <- signif(delay_sd$sd[1], 3)      
-      }
-    }
-  }
-  return(args)
 }
 
 # wrapper for forecasting across regions
