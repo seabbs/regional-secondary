@@ -58,16 +58,20 @@ forecast_region <- function(target_region, reports, case_forecast, verbose = TRU
       if (nrow(prior) > 0) {
         if (verbose) {
           message("Replacing specified priors with those from the passed in prior object")
-          args <- update_secondary_args(args), posterior = prior)
+          fit_args <- update_secondary_args(fit_args, posterior = prior)
         }
       }
     }
   }
   # estimate relationship fitting to just the last month of data
-  cases_to_deaths <- do.call(estimate_secondary, 
+  cases_to_deaths <- do.call(estimate_secondary, c
     list(
-      reports = 
-    ))
+      reports = target_obs,
+      verbose = verbose,
+      burn_in = burn_in
+    ),
+    fit_args
+  ))
   
   estimate_secondary(target_obs, verbose = FALSE, 
                                         burn_in = burn_in,
