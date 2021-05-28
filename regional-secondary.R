@@ -139,7 +139,7 @@ summarised_secondary_posteriors <- function(secondary_list,
 regional_secondary <- function(reports, case_forecast = NULL, verbose = interactive(), 
                                return_fit = TRUE, return_plots = TRUE,
                                posterior_params = c("delay", "frac_obs", "phi"),
-                               priors = NULL, ...) {
+                               priors = NULL, window = NULL, ...) {
   
   # Convert to data.table
   reports <- as.data.table(reports)
