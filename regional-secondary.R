@@ -67,7 +67,7 @@ forecast_region <- function(target_region, reports, case_forecast, verbose = TRU
   cases_to_deaths <- do.call(estimate_secondary, c(
     list(
       reports = target_obs,
-      verbose = TRUE,
+      verbose = FALSE,
       burn_in = burn_in
     ),
     fit_args
