@@ -154,6 +154,7 @@ regional_secondary <- function(reports, case_forecast = NULL, verbose = interact
                              reports = reports, 
                              case_forecast = case_forecast,
                              priors = priors,
+                             window = window,
                              verbose = verbose,
                              return_fit = return_fit,
                              return_plots = return_plots,
