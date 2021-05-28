@@ -17,13 +17,13 @@ update_secondary_args <- function(args, posterior) {
       # pull out just the columns of interes
       posterior <- extract_secondary_priors(posterior)
       # replace scaling if present in the posterior
-      scale <- posterior[variable == "frac_ob"]
+      scale <- posterior[grepl("frac_obs", variable)]
       if (nrow(scale) > 0) {
         args$obs$scale$mean <- signif(scale$mean, 3)
         args$obs$scale$sd <- signif(scale$sd, 3)
       }
       #replace delay parameters if present
-      delay_mean <- posterior[variable == "delay_mean"]
+      delay_mean <- posterior[grepl("delay_mean", variable)]
       delay_sd <- posterior[variable == "delay_sd"]
       if (nrow(delay_mean) > 0) {
         args$delays$delay_mean_mean <- signif(delay_mean$mean, 3)
