@@ -5,7 +5,7 @@ library(purrr)
 library(data.table)
 
 # extract priors from a posterior and update fitting args
-exract_secondary_priors <- function(posterior) {
+extract_secondary_priors <- function(posterior) {
   posterior <- as.data.table(posterior)
   posterior <- posterior[, .(variable, mean, sd)]
   return(posterior)
