@@ -19,7 +19,7 @@ update_secondary_args <- function(args, posterior) {
       # replace scaling if present in the posterior
       scale <- posterior[grepl("frac_obs", variable)]
       if (nrow(scale) > 0) {
-        args$obs$scale$mean <- signif(scale$mean, 3)
+        args$obs$scale$mean <- as.array(signif(scale$mean, 3))
         args$obs$scale$sd <- signif(scale$sd, 3)
       }
       #replace delay parameters if present
