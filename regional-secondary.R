@@ -24,7 +24,7 @@ update_secondary_args <- function(args, posterior) {
       }
       #replace delay parameters if present
       delay_mean <- posterior[grepl("delay_mean", variable)]
-      delay_sd <- posterior[variable == "delay_sd"]
+      delay_sd <- posterior[grepl("delay_sd", variable)]
       if (nrow(delay_mean) > 0) {
         args$delays$delay_mean_mean <- signif(delay_mean$mean, 3)
         args$delays$delay_mean_sd <- signif(delay_mean$sd, 3)
