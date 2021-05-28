@@ -17,19 +17,19 @@ update_secondary_args <- function(args, posterior) {
       # pull out just the columns of interes
       posterior <- extract_secondary_priors(posterior)
       # replace scaling if present in the posterior
-      scale <- posterior[variable == "frac_obs[1]"]
+      scale <- posterior[variable == "frac_ob"]
       if (nrow(scale) > 0) {
-        args$obs$scale$mean <- signif(scale$mean[1], 3)
-        args$obs$scale$sd <- signif(scale$sd[1], 3)
+        args$obs$scale$mean <- signif(scale$mean, 3)
+        args$obs$scale$sd <- signif(scale$sd, 3)
       }
       #replace delay parameters if present
-      delay_mean <- posterior[variable == "delay_mean[1]"]
-      delay_sd <- posterior[variable == "delay_sd[1]"]
+      delay_mean <- posterior[variable == "delay_mean"]
+      delay_sd <- posterior[variable == "delay_sd"]
       if (nrow(delay_mean) > 0) {
-        args$delays$delay_mean_mean <- signif(delay_mean$mean[1], 3)
-        args$delays$delay_mean_sd <- signif(delay_mean$sd[1], 3)
-        args$delays$delay_sd_mean <- signif(delay_sd$mean[1], 3)
-        args$delays$delay_sd_sd <- signif(delay_sd$sd[1], 3)      
+        args$delays$delay_mean_mean <- signif(delay_mean$mean, 3)
+        args$delays$delay_mean_sd <- signif(delay_mean$sd, 3)
+        args$delays$delay_sd_mean <- signif(delay_sd$mean, 3)
+        args$delays$delay_sd_sd <- signif(delay_sd$sd, 3)      
       }
     }
   }
@@ -67,7 +67,7 @@ forecast_region <- function(target_region, reports, case_forecast, verbose = TRU
   cases_to_deaths <- do.call(estimate_secondary, c(
     list(
       reports = target_obs,
-      verbose = FALSE,
+      verbose = TRUE,
       burn_in = burn_in
     ),
     fit_args
