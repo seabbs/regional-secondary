@@ -57,7 +57,7 @@ forecast_region <- function(target_region, reports, case_forecast, verbose = TRU
       prior <- priors[region == target_region]
       if (nrow(prior) > 0) {
         if (verbose) {
-          message("Replacing specified priors with those from the passed in prior object")
+          message("Replacing specified priors with those from the passed in prior dataframe")
           fit_args <- update_secondary_args(fit_args, posterior = prior)
         }
       }
