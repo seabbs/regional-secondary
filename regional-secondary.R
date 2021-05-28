@@ -20,16 +20,16 @@ update_secondary_args <- function(args, posterior) {
       scale <- posterior[grepl("frac_obs", variable)]
       if (nrow(scale) > 0) {
         args$obs$scale$mean <- as.array(signif(scale$mean, 3))
-        args$obs$scale$sd <- signif(scale$sd, 3)
+        args$obs$scale$sd <- as.array(signif(scale$sd, 3))
       }
       #replace delay parameters if present
       delay_mean <- posterior[grepl("delay_mean", variable)]
       delay_sd <- posterior[grepl("delay_sd", variable)]
       if (nrow(delay_mean) > 0) {
-        args$delays$delay_mean_mean <- signif(delay_mean$mean, 3)
-        args$delays$delay_mean_sd <- signif(delay_mean$sd, 3)
-        args$delays$delay_sd_mean <- signif(delay_sd$mean, 3)
-        args$delays$delay_sd_sd <- signif(delay_sd$sd, 3)      
+        args$delays$delay_mean_mean <- as.array(signif(delay_mean$mean, 3))
+        args$delays$delay_mean_sd <- as.array(signif(delay_mean$sd, 3))
+        args$delays$delay_sd_mean <- as.array(signif(delay_sd$mean, 3))
+        args$delays$delay_sd_sd <- as.array(signif(delay_sd$sd, 3))      
       }
     }
   }
