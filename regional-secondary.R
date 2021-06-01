@@ -54,7 +54,7 @@ estimate_region <- function(obs, burn_in = 14, prior = NULL,
   # estimate relationship fitting to just the last month of data
   estimates <- do.call(estimate_secondary, c(
     list(
-      reports = target_obs,
+      reports = obs,
       verbose = FALSE,
       burn_in = burn_in
     ),
@@ -72,7 +72,7 @@ estimate_region <- function(obs, burn_in = 14, prior = NULL,
 
 # inner function for forecasting a single region
 forecast_region <- function(target_region, reports, case_forecast, verbose = TRUE,
-                            return_fit = TRUE, return_plots = TRUE, window = NULL, prior_scale = NULL, burn_in = 14, priors, ...) {
+                            return_fit = TRUE, return_plots = TRUE, window = NULL, prior_scale = 1, burn_in = 14, priors, ...) {
   if (verbose) {
     message("Processing: ", target_region)
   }
@@ -81,19 +81,17 @@ forecast_region <- function(target_region, reports, case_forecast, verbose = TRU
 
   # update args to use posterior priors
   fit_args <- list(...)
+  prior <- NULL
   if (!missing(priors)) {
     if (!is.null(priors)) {
       prior <- priors[region == target_region]
     }
-  } else {
-    prior <- NULL
   }
-
   # set burn in if using window
   if (!is.null(window)) {
-    burn_in <- as.integer(max(obs$date) - min(obs$date)) - window
+    burn_in <- as.integer(max(target_obs$date) - min(target_obs$date)) - window
   }
-
+  prior_estimates <- list()
   prior_estimates[[1]] <- estimate_region(
     target_obs,
     burn_in = burn_in[1],
@@ -106,10 +104,8 @@ forecast_region <- function(target_region, reports, case_forecast, verbose = TRU
     if (length(burn_in) != length(prior_scale)) {
       stop("A prior_scale must be given for each window to fit")
     }
-    prior_estimates <- list()
-    prior_estimates[[1]] <- estimates
     for (i in 2:length(burn_in)) {
-      prior_estimates <- estimate_region(
+      prior_estimates[[i]] <- estimate_region(
         target_obs,
         burn_in = burn_in[i],
         prior_scale = prior_scale[i],
