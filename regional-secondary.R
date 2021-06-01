@@ -56,11 +56,7 @@ estimate_region <- function(obs, burn_in = 14, prior = NULL,
   estimates <- do.call(estimate_secondary, c(
     list(
       reports = obs,
-<<<<<<< HEAD
       verbose = FALSE,
-=======
-      verbose = verbose,
->>>>>>> 9c70817012353edae5e492de17e9274720f50a1b
       burn_in = burn_in
     ),
     fit_args
