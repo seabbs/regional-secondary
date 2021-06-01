@@ -39,7 +39,8 @@ update_secondary_args <- function(args, posterior) {
 # handle replacing priors for the convolution model and taking only a single
 # window
 estimate_region <- function(obs, burn_in = 14, prior = NULL,
-                            prior_scale = 1, fit_args = list()) {
+                            prior_scale = 1, fit_args = list(),
+                            verbose = FALSE) {
   # update args to use posterior priors
   if (!is.null(prior)) {
     if (nrow(prior) > 0) {
@@ -55,7 +56,11 @@ estimate_region <- function(obs, burn_in = 14, prior = NULL,
   estimates <- do.call(estimate_secondary, c(
     list(
       reports = obs,
+<<<<<<< HEAD
       verbose = FALSE,
+=======
+      verbose = verbose,
+>>>>>>> 9c70817012353edae5e492de17e9274720f50a1b
       burn_in = burn_in
     ),
     fit_args
@@ -71,8 +76,10 @@ estimate_region <- function(obs, burn_in = 14, prior = NULL,
 }
 
 # inner function for forecasting a single region
-forecast_region <- function(target_region, reports, case_forecast, verbose = TRUE,
-                            return_fit = TRUE, return_plots = TRUE, window = NULL, prior_scale = 1, burn_in = 14, priors, ...) {
+forecast_region <- function(target_region, reports, case_forecast,
+                            verbose = TRUE, return_fit = TRUE,
+                            return_plots = TRUE, window = NULL,
+                            prior_scale = 1, burn_in = 14, priors, ...) {
   if (verbose) {
     message("Processing: ", target_region)
   }
@@ -101,6 +108,9 @@ forecast_region <- function(target_region, reports, case_forecast, verbose = TRU
   )
 
   if (length(burn_in) > 1) {
+    if (length(prior_scale) == 1) {
+      prior_scale <- rep(prior_scale, length(burn_in))
+    }
     if (length(burn_in) != length(prior_scale)) {
       stop("A prior_scale must be given for each window to fit")
     }
@@ -121,7 +131,7 @@ forecast_region <- function(target_region, reports, case_forecast, verbose = TRU
     out$prior_fits <- prior_estimates[1:(length(burn_in) - 1)]
   }
   if (return_plots) {
-    out$plots$fit <- plot(estimates)
+    out$plots$fit <- plot(estimates$estimate_secondary)
   }
 
   # forecast using model fit
@@ -133,7 +143,7 @@ forecast_region <- function(target_region, reports, case_forecast, verbose = TRU
         pred_cases <- pred_cases[date > max(target_obs$date)]
 
         deaths_forecast <- forecast_secondary(
-          estimates, pred_cases,
+          estimates$estimate_secondary, pred_cases,
           samples = 1000
         )
         if (return_plots) {
@@ -168,6 +178,7 @@ forecast_region <- function(target_region, reports, case_forecast, verbose = TRU
   }
   if (!return_fit) {
     out$estimate_secondary <- NULL
+    out$prior_fits <- NULL
   }
   if (verbose) {
     message("Completed processing: ", target_region)
@@ -232,6 +243,12 @@ regional_secondary <- function(reports, case_forecast = NULL,
   # pick out results and name
   forecasts <- map(forecasts, ~ .[[1]])
   names(forecasts) <- unique(reports$region)
+
+  failed_regions <- compact(errors)
+  if (length(failed_regions) > 0) {
+    message("Following regions failed: ")
+    print(failed_regions)
+  }
 
   # format output
   out <- list()
