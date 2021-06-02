@@ -92,7 +92,9 @@ forecast_region <- function(target_region, reports, case_forecast,
   }
   # set burn in if using window
   if (!is.null(window)) {
-    burn_in <- as.integer(max(target_obs$date) - min(target_obs$date)) - window
+    adj_burn_in <- 
+      as.integer(max(target_obs$date) - min(target_obs$date)) - window
+    burn_in <- ifelse(adj_burn_in < burn_in, burn_in, adj_burn_in)
   }
   prior_estimates <- list()
   prior_estimates[[1]] <- estimate_region(
