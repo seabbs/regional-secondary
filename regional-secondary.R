@@ -47,9 +47,9 @@ estimate_region <- function(obs, burn_in = 14, prior = NULL,
       if (verbose) {
         message("Replacing specified priors with those from the passed in
          prior dataframe")
-        prior <- prior[, sd := sd * prior_scale]
-        fit_args <- update_secondary_args(fit_args, posterior = prior)
       }
+      prior <- prior[, sd := sd * prior_scale]
+      fit_args <- update_secondary_args(fit_args, posterior = prior)
     }
   }
   # estimate relationship fitting to just the last month of data
