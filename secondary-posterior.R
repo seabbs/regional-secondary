@@ -1,11 +1,18 @@
 # function for fitting and extracting posteriors
-secondary_posterior <- function(obs, target_date, window = 14, prior,
-                                prior_scale = 1, args = NULL) {
+secondary_posterior <- function(obs, target_date, start_date, window = 14,
+                                prior, prior_scale = 1, args = NULL) {
   if (missing(prior)) {
     prior <- NULL
   }
+  if (missing(start_date)) {
+    start_date <- NULL
+  }
 
   snapshot <- copy(obs)[date <= target_date]
+  if (!is.null(start_date)) {
+    snapshot <- snapshot[date >= start_date]
+  }
+
   burn_in <- as.integer(nrow(snapshot) - window)
 
   if (!is.null(prior)) {
@@ -14,7 +21,7 @@ secondary_posterior <- function(obs, target_date, window = 14, prior,
   }
 
   model <- do.call(estimate_secondary, c(
-    list(reports = obs, burn_in = burn_in),
+    list(reports = snapshot, burn_in = burn_in),
     args
   ))
 
