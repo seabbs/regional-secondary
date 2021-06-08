@@ -13,7 +13,7 @@ simulate_secondary <- function(data, type = "incidence",
                                obs_model = "poisson", delay_max = 30, ...) {
   type <- match.arg(type, choices = c("incidence", "prevalence"))
   obs_model <- match.arg(obs_model, choices = c("none", "poisson", "negbin"))
-  data <- as.data.table(cases)
+  data <- as.data.table(data)
   data <- data[, index := 1:.N]
   # add scaling
   data <- data[, scaled := primary * scaling]
@@ -30,9 +30,10 @@ simulate_secondary <- function(data, type = "incidence",
   }else if (type == "prevalence") {
     data <- data[1, secondary := scaled]
     for (i in 2:nrow(data)) {
-      index <- 
-        data[c(i - 1, i)][, secondary := shift(secondary, 1) + scaled - conv]
-      data[i, ] <- index[2, ]
+      index <-
+        data[c(i - 1, i)][, secondary := shift(secondary, 1) - conv]
+      index <- index[secondary < 0, secondary := 0]
+      data[i, ] <- index[2][, secondary := secondary + scaled]
     }
   }
   # check secondary is greater that 
