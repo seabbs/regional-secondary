@@ -29,5 +29,8 @@ secondary_posterior <- function(obs, target_date, start_date, window = 14,
     model$fit,
     CrIs = c(seq(0.1, 0.9, 0.1), 0.95)
   )
-  return(posterior)
+
+  out <- model
+  out$posterior <- posterior
+  return(out)
 }
