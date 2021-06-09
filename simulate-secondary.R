@@ -5,6 +5,7 @@ library(EpiNow2)
 weight_cmf <- function(x, meanlog, sdlog) {
   cmf <- cumsum(dlnorm(1:length(x), meanlog, sdlog)) -
     cumsum(dlnorm(0:(length(x) - 1), meanlog, sdlog))
+  cmf / plnorm(length(x), meanlog, sdlog)
   conv <- sum(x * rev(cmf), na.rm = TRUE)
   return(conv)
 }
@@ -14,6 +15,7 @@ simulate_secondary <- function(data, type = "incidence",
   type <- match.arg(type, choices = c("incidence", "prevalence"))
   obs_model <- match.arg(obs_model, choices = c("none", "poisson", "negbin"))
   data <- as.data.table(data)
+  data <- copy(data)
   data <- data[, index := 1:.N]
   # add scaling
   data <- data[, scaled := primary * scaling]
@@ -36,7 +38,7 @@ simulate_secondary <- function(data, type = "incidence",
       data[i, ] <- index[2][, secondary := secondary + scaled]
     }
   }
-  # check secondary is greater that 
+  # check secondary is greater that zero
   data <- data[secondary < 0, secondary := 0]
   data <- data[!is.na(secondary)]
   # apply observation model
