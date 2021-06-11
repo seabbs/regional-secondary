@@ -1,5 +1,7 @@
 library(data.table)
+library(purrr)
 library(EpiNow2)
+library(ggplot2)
 
 # simulate data according to a convolution model
 weight_cmf <- function(x, meanlog, sdlog) {
@@ -49,4 +51,104 @@ simulate_secondary <- function(data, type = "incidence",
   }
   data <- data[, secondary := as.integer(secondary)]
   return(data)
+}
+
+
+# summarise simulated scenarios
+summarise_scenario <- function(hosp, window = 14) {
+
+  summarised_scenarios <- copy(hosp)[, .(date, scaling, meanlog, sdlog)]
+  summarised_scenarios <- melt(summarised_scenarios, id.vars = "date")
+  cris <- function(index, window, x) {
+    x <- data.table(value = x[max(1, index - window + 1):index], type = "temp")
+    cris <- 
+      EpiNow2::calc_summary_measures(x, CrIs = c(seq(0.1, 0.9, 0.1), 0.95))
+    return(cris)
+  }
+  summarised_scenarios <- summarised_scenarios[,
+    .(date = date, summary = map(1:.N, ~ cris(index = ., window, x = value))),
+      by = c("variable")]
+  summarised_scenarios <- summarised_scenarios[,
+    rbindlist(summary), by = c("date", "variable")][, type := NULL]
+  summarised_scenarios <-
+    summarised_scenarios[as.character(date) %in% as.character(dates)]
+  setnames(summarised_scenarios, "date", "target_date")
+  return(summarised_scenarios)
+}
+
+# join multiple simulations together
+join_simulations <- function(simulations, labels, to_week = TRUE) {
+  simulations <- map2(simulations, labels, ~ .x[, target := .y])
+  simulations <- rbindlist(simulations, fill = TRUE, use.names = TRUE)
+
+  if (to_week) {
+    simulations <- simulations[, 
+      date := floor_date(date, "week", week_start = 1)]
+    simulations <- simulations[, lapply(.SD, sum),
+                                by = c("date", "target"),
+                                .SDcols = c("secondary"), ]
+  }
+  return(simulations)
+}
+
+# summarise parameter posterior and join to input parameter summaries
+summarise_parameter_posteriors <- function(fits, scenarios, labels) {
+  posteriors <- map(fits, ~rbindlist(.$posterior, idcol = "target_date"))
+  posteriors <- map2(posteriors, labels,  ~ .x[, target := .y])
+  posteriors <- rbindlist(posteriors)
+  posteriors <- posteriors[variable %in% c("delay_mean[1]", "delay_sd[1]",
+                                           "frac_obs[1]")]
+
+  scenarios <- map2(scenarios, labels,  ~ copy(.x)[, target := .y])
+  scenarios <- rbindlist(scenarios)
+  scenarios <- scenarios[, source := "Simulation"]
+
+  results <- rbindlist(list(
+      posteriors[, source := "Model"][, target_date := as.Date(target_date)],
+      scenarios
+    ), use.names = TRUE, fill = TRUE
+  )
+
+  num_col <- which(sapply(results, is.numeric))
+  results[, (num_col) := lapply(.SD, signif, digits = 3), .SDcols = num_col]
+  results[variable %in% "frac_obs[1]", variable := "scaling"]
+  results[variable %in% "delay_mean[1]", variable := "meanlog"]
+  results[variable %in% "delay_sd[1]", variable := "sdlog"]
+  return(results)
+}
+
+# plot parameter posteriors using output from summarise_parameter_posteriors
+plot_posterior <- function(results, param, scale_per = FALSE,
+                            scale_label = "scaling") {
+  target_results <- results[variable %in% param]
+  target_results[source %in% "Model", target_date := target_date + 3]
+  setnames(target_results, "source", "Source")
+
+  plot <- ggplot(target_results) +
+    aes(x = target_date, y = median, col = Source, fill = Source)
+
+  plot <- plot +
+    geom_point(size = 1.5) +
+    geom_linerange(aes(ymin = lower_90, ymax = upper_90),
+                   alpha = 0.2, size = 1.5) +
+    geom_linerange(aes(ymin = lower_60, ymax = upper_60),
+                   alpha = 0.2, size = 1.5) +
+    geom_linerange(aes(ymin = lower_30, ymax = upper_30),
+                   alpha = 0.2, size = 1.5) +
+    theme_minimal() +
+    labs(x = "Date", y = scale_label) +
+    guides(size = NULL) +
+    theme_cowplot() +
+    scale_x_date(date_breaks = "2 week", date_labels = "%b %d") + 
+    theme(axis.text.x = ggplot2::element_text(angle = 90)) + 
+    theme(legend.position = "bottom") +
+    scale_color_brewer(palette = "Dark2") +
+    scale_fill_brewer(palette = "Dark2") +
+    facet_wrap(~target, ncol = 1, scales = "free_y")
+
+  if (scale_per) {
+    plot <- plot +
+      scale_y_continuous(labels = percent)
+  }
+  return(plot)
 }
