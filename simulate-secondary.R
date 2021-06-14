@@ -7,7 +7,7 @@ library(ggplot2)
 weight_cmf <- function(x, meanlog, sdlog) {
   cmf <- cumsum(dlnorm(1:length(x), meanlog, sdlog)) -
     cumsum(dlnorm(0:(length(x) - 1), meanlog, sdlog))
-  cmf / plnorm(length(x), meanlog, sdlog)
+  cmf <- cmf / plnorm(length(x), meanlog, sdlog)
   conv <- sum(x * rev(cmf), na.rm = TRUE)
   return(conv)
 }
@@ -56,7 +56,6 @@ simulate_secondary <- function(data, type = "incidence",
 
 # summarise simulated scenarios
 summarise_scenario <- function(hosp, window = 14) {
-
   summarised_scenarios <- copy(hosp)[, .(date, scaling, meanlog, sdlog)]
   summarised_scenarios <- melt(summarised_scenarios, id.vars = "date")
   cris <- function(index, window, x) {
@@ -77,17 +76,18 @@ summarise_scenario <- function(hosp, window = 14) {
 }
 
 # join multiple simulations together
-join_simulations <- function(simulations, labels, to_week = TRUE) {
+join_simulations <- function(simulations, labels, to_week = FALSE) {
   simulations <- map2(simulations, labels, ~ .x[, target := .y])
   simulations <- rbindlist(simulations, fill = TRUE, use.names = TRUE)
 
   if (to_week) {
-    simulations <- simulations[, 
+    simulations <- simulations[,
       date := floor_date(date, "week", week_start = 1)]
     simulations <- simulations[, lapply(.SD, sum),
                                 by = c("date", "target"),
                                 .SDcols = c("secondary"), ]
   }
+  simulations <- simulations[, target : as.factor(target)]
   return(simulations)
 }
 
@@ -151,4 +151,13 @@ plot_posterior <- function(results, param, scale_per = FALSE,
       scale_y_continuous(labels = percent)
   }
   return(plot)
+}
+
+# summarise predictions
+summarise_posterior_predictions <- function(fits = list(), labels = c()) {
+  predictions <- map(fits, ~rbindlist(.$predictions, idcol = "target_date"))
+  predictions <- map2(predictions, labels,  ~ .x[, target := .y])
+  predictions <- rbindlist(predictions)
+  predictions <- predictions[!is.na(mean)]
+  return(predictions)
 }
