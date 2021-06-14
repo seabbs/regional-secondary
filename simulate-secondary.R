@@ -51,14 +51,13 @@ simulate_secondary <- function(data, type = "incidence",
   return(data)
 }
 
-
 # summarise simulated scenarios
 summarise_scenario <- function(hosp, window = 14) {
   summarised_scenarios <- copy(hosp)[, .(date, scaling, meanlog, sdlog)]
   summarised_scenarios <- melt(summarised_scenarios, id.vars = "date")
   cris <- function(index, window, x) {
     x <- data.table(value = x[max(1, index - window + 1):index], type = "temp")
-    cris <- 
+    cris <-
       EpiNow2::calc_summary_measures(x, CrIs = c(seq(0.1, 0.9, 0.1), 0.95))
     return(cris)
   }
@@ -179,8 +178,8 @@ diff_variable <- function(dt, variable, label, by, fill = 0) {
   }
 
   dt_alt <- dt_alt[,
-  (target_cols) := map(.SD, ~ . - shift(secondary, fill = fill)),
-  .SDcols = target_cols, by = by]
+    (target_cols) := map(.SD, ~ . - shift(secondary, fill = fill)),
+    .SDcols = target_cols, by = by]
   dt_alt <- dt_alt[, target := label]
   dt_alt <- suppressWarnings(dt_alt[, across := NULL])
   dt <- rbind(dt, dt_alt)
