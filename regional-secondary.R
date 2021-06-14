@@ -19,6 +19,7 @@ update_secondary_args <- function(args, posterior) {
       # replace scaling if present in the posterior
       scale <- posterior[grepl("frac_obs", variable)]
       if (nrow(scale) > 0) {
+        message("Scaling mean from ", args$obs$scale$mean, " to ", signif(scale$mean, 3))
         args$obs$scale$mean <- as.array(signif(scale$mean, 3))
         args$obs$scale$sd <- as.array(signif(scale$sd, 3))
       }
@@ -26,6 +27,7 @@ update_secondary_args <- function(args, posterior) {
       delay_mean <- posterior[grepl("delay_mean", variable)]
       delay_sd <- posterior[grepl("delay_sd", variable)]
       if (nrow(delay_mean) > 0) {
+        message("Delay mean from ", args$delays$delay_mean_mean, " to ", signif(delay_mean$mean, 3))
         args$delays$delay_mean_mean <- as.array(signif(delay_mean$mean, 3))
         args$delays$delay_mean_sd <- as.array(signif(delay_mean$sd, 3))
         args$delays$delay_sd_mean <- as.array(signif(delay_sd$mean, 3))
@@ -33,9 +35,9 @@ update_secondary_args <- function(args, posterior) {
       }
       # replace phi prior if present
       phi <- posterior[grepl("rep_phi", variable)]
-      if (nrow(delay_mean) > 0) {
-        args$obs$phi_mean <- as.array(signif(phi$mean, 3))
-        args$obs$phi_sd <- as.array(signif(phi$sd, 3))
+      if (nrow(phi) > 0) {
+        message("phi mean from ", args$obs$phi, " to ", c(signif(phi$mean, 3), signif(phi$sd, 3)))
+        args$obs$phi <- c(signif(phi$mean, 3), signif(phi$sd, 3))
       }
     }
   }

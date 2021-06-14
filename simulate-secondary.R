@@ -19,25 +19,23 @@ simulate_secondary <- function(data, type = "incidence",
   data <- as.data.table(data)
   data <- copy(data)
   data <- data[, index := 1:.N]
-  # add scaling
-  data <- data[, scaled := primary * scaling]
   # add convolution
   data <- data[,
     conv := pmap_dbl(list(i = index, m = meanlog, s = sdlog),
      function(i, m, s) {
-       weight_cmf(scaled[max(1, i - delay_max):i],
+       weight_cmf(primary[max(1, i - delay_max):i],
                   meanlog = m, sdlog = s)
      })]
   # build model
   if (type == "incidence") {
-    data <- data[, secondary := conv]
+    data <- data[, secondary := scaling * conv]
   }else if (type == "prevalence") {
-    data <- data[1, secondary := scaled]
+    data <- data[1, secondary := scaling * primary]
     for (i in 2:nrow(data)) {
       index <-
-        data[c(i - 1, i)][, secondary := shift(secondary, 1) - conv]
+        data[c(i - 1, i)][, secondary := shift(secondary, 1) - scaling * conv]
       index <- index[secondary < 0, secondary := 0]
-      data[i, ] <- index[2][, secondary := secondary + scaled]
+      data[i, ] <- index[2][, secondary := secondary + scaling * primary]
     }
   }
   # check secondary is greater that zero
@@ -97,7 +95,7 @@ summarise_parameter_posteriors <- function(fits, scenarios, labels) {
   posteriors <- map2(posteriors, labels,  ~ .x[, target := .y])
   posteriors <- rbindlist(posteriors)
   posteriors <- posteriors[variable %in% c("delay_mean[1]", "delay_sd[1]",
-                                           "frac_obs[1]")]
+                                           "frac_obs[1]", "rep_phi[1]")]
 
   scenarios <- map2(scenarios, labels,  ~ copy(.x)[, target := .y])
   scenarios <- rbindlist(scenarios)
@@ -114,6 +112,7 @@ summarise_parameter_posteriors <- function(fits, scenarios, labels) {
   results[variable %in% "frac_obs[1]", variable := "scaling"]
   results[variable %in% "delay_mean[1]", variable := "meanlog"]
   results[variable %in% "delay_sd[1]", variable := "sdlog"]
+  results[variable %in% "rep_phi[1]", variable := "phi"]
   return(results)
 }
 
@@ -160,4 +159,79 @@ summarise_posterior_predictions <- function(fits = list(), labels = c()) {
   predictions <- rbindlist(predictions)
   predictions <- predictions[!is.na(mean)]
   return(predictions)
+}
+
+# add the difference between variables
+diff_variable <- function(dt, variable, label, by, fill = 0) {
+  dt <- copy(dt)
+  dt_alt <- dt[target %in% variable]
+
+  cols <- colnames(dt_alt)
+  target_cols <- intersect(cols, c("median", "mean", "secondary"))
+  target_cols <- c(target_cols, grep(
+    paste(c("lower_", "upper_"), collapse = "|"),
+    cols, fixed = FALSE, value = TRUE
+  ))
+
+  if (missing(by)) {
+    by <- "across"
+    dt_alt[, across := 1]
+  }
+
+  dt_alt <- dt_alt[,
+  (target_cols) := map(.SD, ~ . - shift(secondary, fill = fill)),
+  .SDcols = target_cols, by = by]
+  dt_alt <- dt_alt[, target := label]
+  dt_alt <- dt_alt[, across := NULL]
+  dt <- rbind(dt, dt_alt)
+  return(dt)
+}
+
+
+# plot posterior predictions
+plot_predictions <- function (simulations, predictions,
+                              variable, log = TRUE, keep_x = TRUE) {
+  simulations <- copy(simulations)
+  predictions <- copy(predictions)
+
+  if (!missing(variable)) {
+    simulations <- simulations[target %in% variable]
+    predictions <- predictions[target %in% variable]
+  }
+
+  plot <- ggplot(simulations) +
+    aes(x = date, y = secondary) +
+    geom_ribbon(data = predictions,
+                aes(ymin = lower_30, ymax = upper_30, group = target_date),
+                alpha = 0.15, fill = "#1B9E77") +
+    geom_ribbon(data = predictions,
+                aes(ymin = lower_60, ymax = upper_60, group = target_date),
+                alpha = 0.15, fill = "#1B9E77") +
+    geom_ribbon(data = predictions,
+                aes(ymin = lower_90, ymax = upper_90, group = target_date),
+                alpha = 0.15, fill = "#1B9E77") +
+    geom_point(alpha = 0.2, size = 0.8) +
+    theme_cowplot() +
+    scale_x_date(date_breaks = "2 week", date_labels = "%b %d") +
+    theme(axis.text.x = element_text(angle = 90)) +
+    theme(legend.position = "none") +
+    scale_color_brewer(palette = "Dark2") +
+    scale_fill_brewer(palette = "Dark2")
+
+  if (log) {
+    plot <- plot + 
+      scale_y_continuous(labels = comma, trans = log_trans()) +
+      labs(x = "Date", y = "Notifications (log scale)")
+  }else{
+    plot <- plot + 
+      scale_y_continuous(labels = comma) +
+      labs(x = "Date", y = "Notifications")
+  }
+
+  if (!keep_x) {
+    plot <- plot + 
+      theme(axis.title.x=element_blank(),
+            axis.text.x=element_blank())
+  }
+  return(plot)
 }
