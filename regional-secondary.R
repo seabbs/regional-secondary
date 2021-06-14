@@ -31,6 +31,12 @@ update_secondary_args <- function(args, posterior) {
         args$delays$delay_sd_mean <- as.array(signif(delay_sd$mean, 3))
         args$delays$delay_sd_sd <- as.array(signif(delay_sd$sd, 3))
       }
+      # replace phi prior if present
+      phi <- posterior[grepl("rep_phi", variable)]
+      if (nrow(delay_mean) > 0) {
+        args$obs$phi_mean <- as.array(signif(phi$mean, 3))
+        args$obs$phi_sd <- as.array(signif(phi$sd, 3))
+      }
     }
   }
   return(args)
@@ -188,7 +194,7 @@ forecast_region <- function(target_region, reports, case_forecast,
 summarised_secondary_posteriors <- function(secondary_list,
                                             params = c(
                                               "delay", "frac_obs",
-                                              "phi"
+                                              "rep_phi"
                                             )) {
   summarised_posterior <- map(
     secondary_list,
@@ -211,7 +217,8 @@ summarised_secondary_posteriors <- function(secondary_list,
 regional_secondary <- function(reports, case_forecast = NULL,
                                verbose = interactive(),
                                return_fit = TRUE, return_plots = TRUE,
-                               posterior_params = c("delay", "frac_obs", "phi"),
+                               posterior_params = c("delay", "frac_obs",
+                                                    "rep_phi"),
                                priors = NULL, window = NULL, ...) {
 
   # Convert to data.table
