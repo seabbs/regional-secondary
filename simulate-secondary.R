@@ -182,7 +182,7 @@ diff_variable <- function(dt, variable, label, by, fill = 0) {
   (target_cols) := map(.SD, ~ . - shift(secondary, fill = fill)),
   .SDcols = target_cols, by = by]
   dt_alt <- dt_alt[, target := label]
-  dt_alt <- dt_alt[, across := NULL]
+  dt_alt <- suppressWarnings(dt_alt[, across := NULL])
   dt <- rbind(dt, dt_alt)
   return(dt)
 }
