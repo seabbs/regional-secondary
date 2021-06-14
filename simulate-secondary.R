@@ -118,15 +118,20 @@ summarise_parameter_posteriors <- function(fits, scenarios, labels) {
 
 # plot parameter posteriors using output from summarise_parameter_posteriors
 plot_posterior <- function(results, param, scale_per = FALSE,
-                            scale_label = "scaling") {
+                           scale_label = "scaling", data = NULL) {
   target_results <- results[variable %in% param]
   target_results[source %in% "Model", target_date := target_date + 3]
   setnames(target_results, "source", "Source")
 
-  plot <- ggplot(target_results) +
-    aes(x = target_date, y = median, col = Source, fill = Source)
+  if (!is.null(data)) {
+    target_results <- target_results[Source == "Model"]
+    data <- data[, Source := "Simulation"]
+    setnames(data, param, "median")
+    setnames(data, "date", "target_date")
+  }
 
-  plot <- plot +
+  plot <- ggplot(target_results) +
+    aes(x = target_date, y = median, col = Source, fill = Source) +
     geom_point(size = 1.5) +
     geom_linerange(aes(ymin = lower_90, ymax = upper_90),
                    alpha = 0.2, size = 1.5) +
@@ -144,6 +149,11 @@ plot_posterior <- function(results, param, scale_per = FALSE,
     scale_color_brewer(palette = "Dark2") +
     scale_fill_brewer(palette = "Dark2") +
     facet_wrap(~target, ncol = 1, scales = "free_y")
+
+  if (!is.null(data)) {
+    plot <- plot +
+      geom_point(size = 1.5, data = data, colour =  "black")
+  }
 
   if (scale_per) {
     plot <- plot +
