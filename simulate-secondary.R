@@ -222,15 +222,15 @@ plot_predictions <- function (simulations, predictions,
       scale_y_continuous(labels = comma, trans = log_trans()) +
       labs(x = "Date", y = "Notifications (log scale)")
   }else{
-    plot <- plot + 
+    plot <- plot +
       scale_y_continuous(labels = comma) +
       labs(x = "Date", y = "Notifications")
   }
 
   if (!keep_x) {
-    plot <- plot + 
-      theme(axis.title.x=element_blank(),
-            axis.text.x=element_blank())
+    plot <- plot +
+      theme(axis.title.x = element_blank(),
+            axis.text.x = element_blank())
   }
   return(plot)
 }
