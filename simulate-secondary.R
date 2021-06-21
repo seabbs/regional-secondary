@@ -19,23 +19,25 @@ simulate_secondary <- function(data, type = "incidence",
   data <- as.data.table(data)
   data <- copy(data)
   data <- data[, index := 1:.N]
+  # apply scaling
+  data <- data[, scaled := scaling * primary]
   # add convolution
   data <- data[,
     conv := pmap_dbl(list(i = index, m = meanlog, s = sdlog),
      function(i, m, s) {
-       weight_cmf(primary[max(1, i - delay_max):i],
+       weight_cmf(scaled[max(1, i - delay_max):i],
                   meanlog = m, sdlog = s)
      })]
   # build model
   if (type == "incidence") {
-    data <- data[, secondary := scaling * conv]
+    data <- data[, secondary := conv]
   }else if (type == "prevalence") {
-    data <- data[1, secondary := scaling * primary]
+    data <- data[1, secondary := scaled]
     for (i in 2:nrow(data)) {
       index <-
-        data[c(i - 1, i)][, secondary := shift(secondary, 1) - scaling * conv]
+        data[c(i - 1, i)][, secondary := shift(secondary, 1) - conv]
       index <- index[secondary < 0, secondary := 0]
-      data[i, ] <- index[2][, secondary := secondary + scaling * primary]
+      data[i, ] <- index[2][, secondary := secondary + scaled]
     }
   }
   # check secondary is greater that zero
@@ -52,7 +54,7 @@ simulate_secondary <- function(data, type = "incidence",
 }
 
 # summarise simulated scenarios
-summarise_scenario <- function(hosp, window = 14) {
+summarise_scenario <- function(hosp, window = 1) {
   summarised_scenarios <- copy(hosp)[, .(date, scaling, meanlog, sdlog)]
   summarised_scenarios <- melt(summarised_scenarios, id.vars = "date")
   cris <- function(index, window, x) {
