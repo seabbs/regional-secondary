@@ -1,6 +1,7 @@
 library(data.table)
 library(purrr)
 library(EpiNow2)
+library(rstan)
 library(ggplot2)
 
 # simulate data according to a convolution model
@@ -54,7 +55,7 @@ simulate_secondary <- function(data, type = "incidence",
 }
 
 # summarise simulated scenarios
-summarise_scenario <- function(hosp, window = 1) {
+summarise_scenario <- function(hosp, window = 1, dates) {
   summarised_scenarios <- copy(hosp)[, .(date, scaling, meanlog, sdlog)]
   summarised_scenarios <- melt(summarised_scenarios, id.vars = "date")
   cris <- function(index, window, x) {
@@ -68,8 +69,11 @@ summarise_scenario <- function(hosp, window = 1) {
       by = c("variable")]
   summarised_scenarios <- summarised_scenarios[,
     rbindlist(summary), by = c("date", "variable")][, type := NULL]
-  summarised_scenarios <-
+  if (!missing(dates)) {
+    summarised_scenarios <-
     summarised_scenarios[as.character(date) %in% as.character(dates)]
+  }
+
   setnames(summarised_scenarios, "date", "target_date")
   return(summarised_scenarios)
 }
@@ -90,56 +94,21 @@ join_simulations <- function(simulations, labels, to_week = FALSE) {
   return(simulations)
 }
 
-# summarise parameter posterior and join to input parameter summaries
-summarise_parameter_posteriors <- function(fits, scenarios, labels) {
-  posteriors <- map(fits, ~rbindlist(.$posterior, idcol = "target_date"))
-  posteriors <- map2(posteriors, labels,  ~ .x[, target := .y])
-  posteriors <- rbindlist(posteriors)
-  posteriors <- posteriors[variable %in% c("delay_mean[1]", "delay_sd[1]",
-                                           "frac_obs[1]", "rep_phi[1]")]
-
-  scenarios <- map2(scenarios, labels,  ~ copy(.x)[, target := .y])
-  scenarios <- rbindlist(scenarios)
-  scenarios <- scenarios[, source := "Simulation"]
-
-  results <- rbindlist(list(
-      posteriors[, source := "Model"][, target_date := as.Date(target_date)],
-      scenarios
-    ), use.names = TRUE, fill = TRUE
-  )
-
-  num_col <- which(sapply(results, is.numeric))
-  results[, (num_col) := lapply(.SD, signif, digits = 3), .SDcols = num_col]
-  results[variable %in% "frac_obs[1]", variable := "scaling"]
-  results[variable %in% "delay_mean[1]", variable := "meanlog"]
-  results[variable %in% "delay_sd[1]", variable := "sdlog"]
-  results[variable %in% "rep_phi[1]", variable := "phi"]
-  return(results)
-}
 
 # plot parameter posteriors using output from summarise_parameter_posteriors
-plot_posterior <- function(results, param, scale_per = FALSE,
-                           scale_label = "scaling", data = NULL) {
-  target_results <- results[variable %in% param]
-  target_results[source %in% "Model", target_date := target_date + 3]
-  setnames(target_results, "source", "Source")
-
+plot_trace <- function(draws, scale_per = FALSE,
+                       samples = 100, 
+                       alpha = 0.01, obs_alpha = 0.8,
+                       scale_label = "scaling",data = NULL) {
+  draws <- as.data.table(draws)[, Source := "Model"]
+  draws <- draws[sample <= samples]
   if (!is.null(data)) {
-    target_results <- target_results[Source == "Model"]
     data <- data[, Source := "Simulation"]
-    setnames(data, param, "median")
-    setnames(data, "date", "target_date")
   }
 
-  plot <- ggplot(target_results) +
-    aes(x = target_date, y = median, col = Source, fill = Source) +
-    geom_point(size = 1.5) +
-    geom_linerange(aes(ymin = lower_90, ymax = upper_90),
-                   alpha = 0.2, size = 1.5) +
-    geom_linerange(aes(ymin = lower_60, ymax = upper_60),
-                   alpha = 0.2, size = 1.5) +
-    geom_linerange(aes(ymin = lower_30, ymax = upper_30),
-                   alpha = 0.2, size = 1.5) +
+  plot <- ggplot(draws) +
+    aes(x = date, y = value, group = sample) +
+    geom_line(size = 1.1, alpha = alpha) +
     theme_minimal() +
     labs(x = "Date", y = scale_label) +
     guides(size = NULL) +
@@ -153,7 +122,8 @@ plot_posterior <- function(results, param, scale_per = FALSE,
 
   if (!is.null(data)) {
     plot <- plot +
-      geom_point(size = 1.5, data = data, colour =  "black")
+      geom_point(aes(group = NULL), alpha = obs_alpha, size = 1.2,
+                 data = data, colour =  "black")
   }
 
   if (scale_per) {
@@ -161,15 +131,6 @@ plot_posterior <- function(results, param, scale_per = FALSE,
       scale_y_continuous(labels = percent)
   }
   return(plot)
-}
-
-# summarise predictions
-summarise_posterior_predictions <- function(fits = list(), labels = c()) {
-  predictions <- map(fits, ~rbindlist(.$predictions, idcol = "target_date"))
-  predictions <- map2(predictions, labels,  ~ .x[, target := .y])
-  predictions <- rbindlist(predictions)
-  predictions <- predictions[!is.na(mean)]
-  return(predictions)
 }
 
 # add the difference between variables
