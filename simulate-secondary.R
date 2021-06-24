@@ -96,10 +96,12 @@ join_simulations <- function(simulations, labels, to_week = FALSE) {
 
 
 # plot parameter posteriors using output from summarise_parameter_posteriors
-plot_trace <- function(draws, scale_per = FALSE,
-                       samples = 100, 
+plot_trace <- function(draws, data = NULL,
+                       samples = 100,
                        alpha = 0.01, obs_alpha = 0.8,
-                       scale_label = "scaling",data = NULL) {
+                       scale = "continuous", x_axis = TRUE,
+                       scale_label = "scaling") {
+  scale <- match.arg(scale, choice = c("continuous", "log", "percent"))
   draws <- as.data.table(draws)[, Source := "Model"]
   draws <- draws[sample <= samples]
   if (!is.null(data)) {
@@ -126,22 +128,42 @@ plot_trace <- function(draws, scale_per = FALSE,
                  data = data, colour =  "black")
   }
 
-  if (scale_per) {
+  if (scale %in% "log") {
+    plot <- plot + 
+      scale_y_continuous(labels = comma, trans = log_trans()) +
+      labs(x = "Date", y = paste0(scale_label, "(log scale)"))
+  }else if (scale %in% "continuous") {
     plot <- plot +
-      scale_y_continuous(labels = percent)
+      scale_y_continuous(labels = comma) +
+      labs(x = "Date", y = scale_label)
+  }else if (scale %in%  "percent") {
+        plot <- plot +
+      scale_y_continuous(labels = percent) +
+      labs(x = "Date", y = scale_label)
   }
+
+  if (!x_axis) {
+    plot <- plot +
+      theme(axis.title.x = element_blank(),
+            axis.text.x = element_blank())
+  }
+
   return(plot)
 }
 
 # add the difference between variables
-diff_variable <- function(dt, variable, label, by, fill = 0) {
+add_diff_variable <- function(dt, variable, label, by, fill = 0,
+                              shift_col = "value",
+                              exact_cols = c("median", "mean", "secondary",
+                                         "value"),
+                              partial_cols = c("lower_", "upper_")) {
   dt <- copy(dt)
   dt_alt <- dt[target %in% variable]
 
   cols <- colnames(dt_alt)
-  target_cols <- intersect(cols, c("median", "mean", "secondary"))
+  target_cols <- intersect(cols, exact_cols)
   target_cols <- c(target_cols, grep(
-    paste(c("lower_", "upper_"), collapse = "|"),
+    paste(partial_cols, collapse = "|"),
     cols, fixed = FALSE, value = TRUE
   ))
 
@@ -151,7 +173,7 @@ diff_variable <- function(dt, variable, label, by, fill = 0) {
   }
 
   dt_alt <- dt_alt[,
-    (target_cols) := map(.SD, ~ . - shift(secondary, fill = fill)),
+    (target_cols) := map(.SD, ~ . - shift(get(shift_col), fill = fill)),
     .SDcols = target_cols, by = by]
   dt_alt <- dt_alt[, target := label]
   dt_alt <- suppressWarnings(dt_alt[, across := NULL])
