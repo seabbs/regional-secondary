@@ -26,13 +26,13 @@ update_secondary_args <- function(args, posterior) {
       delay_mean <- posterior[grepl("delay_mean", variable)]
       delay_sd <- posterior[grepl("delay_sd", variable)]
       if (nrow(delay_mean) > 0) {
-        if (is.null(args$delays$delays)) {
+        if (args$delays$n_p == 0) {
          warning("Cannot replace delay distribution parameters as no default has been set")
         }
-        args$delays$delay_mean_mean <- as.array(signif(delay_mean$mean, 3))
-        args$delays$delay_mean_sd <- as.array(signif(delay_mean$sd, 3))
-        args$delays$delay_sd_mean <- as.array(signif(delay_sd$mean, 3))
-        args$delays$delay_sd_sd <- as.array(signif(delay_sd$sd, 3))
+        args$delays$mean_mean <- as.array(signif(delay_mean$mean, 3))
+        args$delays$mean_sd <- as.array(signif(delay_mean$sd, 3))
+        args$delays$sd_mean <- as.array(signif(delay_sd$mean, 3))
+        args$delays$sd_sd <- as.array(signif(delay_sd$sd, 3))
       }
       # replace phi prior if present
       phi <- posterior[grepl("rep_phi", variable)]
